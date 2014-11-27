@@ -42,5 +42,5 @@ The Gnuplot can be installed as:
 
 CONTACTS.
 
-Please contact andruiman, andruiman@gmail.com for any resonable questions or suggestions about the program. 
+Please contact andruiman, andruiman@gmail.com for any reasonable questions or suggestions about the program. 
 Or use Nxtt forum at https://nxtforum.org/consensus-research/multibranch-forging-approach/.  
