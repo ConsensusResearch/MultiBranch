@@ -39,12 +39,17 @@ CONFIGURATION
 
 Configuration file 'multibranch.cfg' (the name is statically defined in constants.hs, after changing recompilation
 is needed) consists of the following parameters:
- strTimesFileName: String. Name of the output file for times between generated blocks in one (longest) chain.
- bUseTFDepth: bool. Boolean parameter denotes whether to use nTFDepth parameter, or do the forging to as many blocks as possible (TOO SLOW). 
- nTFDepth: Integer. Parameter means the number of blocks to forge to, they are selected from the ordered list of open blocks. If it set to 
-           zero - single branch forging (with forks) is simulated.
- nFixAccounts: Integer. Number of accounts in the network besides God account. Cannot be more than 15. The systemBalance (defined in Constants.hs) 
-               is distributed uniformly between them.
+
+* strTimesFileName: String. Name of the output file for times between generated blocks in one (longest) chain
+
+* bUseTFDepth: bool. Boolean parameter denotes whether to use nTFDepth parameter, or do the forging to as many blocks as possible (TOO SLOW)
+
+* nTFDepth: Integer. Parameter means the number of blocks to forge to, they are selected from the ordered list of open blocks. If it set to
+           zero - single branch forging (with forks) is simulated
+
+* nFixAccounts: Integer. Number of accounts in the network besides God account. Cannot be more than 15. The systemBalance (defined in Constants.hs)
+               is distributed uniformly between them
+
 
 RUN & OUTPUT
 -------------
