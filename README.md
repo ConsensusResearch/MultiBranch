@@ -10,7 +10,7 @@ This is the tool for multibranch forging simulation for PoS crypto-currencies ne
 RUN
 ----
 
-1. If you use Linux you can download & run ready executable program. Download archive with executableit & config file
+1. If you use Linux you can download & run ready executable program. Download archive with it & config file
  with forging model parameters there https://github.com/ConsensusResearch/MultiBranch/releases/download/1.0/multibranch-1.0.tar.gz
 
 2. If you use other operating system or don't want to run downloaded binaries, compile program from sources & run.
