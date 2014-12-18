@@ -4,6 +4,10 @@ import Prelude
 import qualified Postructures as PS
 import qualified Constants as Const
 
+int2nat :: Integer -> PS.Nat
+int2nat 0 = PS.O
+int2nat m = PS.S (int2nat (m-1))
+
 data Stream a =
    Cons0 a (Stream a)
 
@@ -40,6 +44,7 @@ nat2bn PS.O = 0
 nat2bn (PS.S n') = 1 + (nat2bn n')
 
 bN0 = 0
+bN1 = 1
 
 bool2bool :: Prelude.Bool -> PS.Bool
 bool2bool True = PS.True
@@ -72,6 +77,11 @@ maxBaseTarget = PS.maxBaseTarget multN divN doubleN Const.systemBalance Const.go
 
 calcGenerationSignature = PS.calcGenerationSignature dig2string hashfun
 
+sqr = \n -> n*n
+
+difficulty_fun = \n -> sqr (divN Const.maxRand n)
+
+block_difficulty = \b ->  difficulty_fun (PS.baseTarget b)
 
 formBlock_orig :: Block -> Account -> Timestamp -> PS.List Transaction -> PS.HexSPK -> Block
 formBlock_orig pb acc ts txs pk =
@@ -82,7 +92,7 @@ formBlock_orig pb acc ts txs pk =
   let candidate = div (pbt*(ts-(PS.btimestamp  pb))) Const.goalBlockTime in
   let bt = min (max minTarget candidate) maxTarget in
   let gs = calcGenerationSignature pb acc in
-  PS.Block  vtxs bt acc gs ts
+  PS.Block vtxs PS.O bt (plusN (PS.totalDifficulty pb) (difficulty_fun bt)) acc gs ts
 
  
 mthcl_gamma = 0.1 
@@ -96,12 +106,13 @@ formBlock_mthcl pb acc ts txs pk =
   let kbt = if dt >= 2.0 then 2.0 else if dt > 1.0 then dt else if dt>0.5 then (1.0-mthcl_gamma*(1.0-dt)) else mthcl_invbeta in
   let bt = max 100 (truncate (kbt*(fromInteger pbt))) in
   let gs = calcGenerationSignature pb acc in
-  PS.Block  vtxs bt acc gs ts  
+  PS.Block  vtxs PS.O bt (plusN (PS.totalDifficulty pb) (difficulty_fun bt)) acc gs ts  
 
 
 formBlock  = formBlock_orig
 
-block_difficulty = \ _ -> 1
+-- block_difficulty = \ _ -> 1
+
 
 -- block_difficulty = PS.baseTarget
 
@@ -109,7 +120,7 @@ minRand = div Const.maxRand 3
 
 calculateHit_orig :: Account -> Block -> BN
 calculateHit_orig acc pb = 
-   str_nth (PS.btimestamp pb + 1) (randStream (nat2bn (PS.hex2nat (PS.publicKey acc))))
+   str_nth (PS.btimestamp pb + 29) (randStream (100+nat2bn (PS.hex2nat (PS.publicKey acc))))
 
 calculateHit_mthcl :: Account -> Block -> BN
 calculateHit_mthcl acc pb = 
@@ -131,24 +142,26 @@ type Node = PS.Node0 BN
 
 canforge :: Node -> Timestamp -> Block -> PS.Bool
 canforge n ts pb = verifyHit (calculateHit (PS.node_account n) pb) pb ts (PS.effectiveBalance (PS.node_account n))
-                    
--- succN dig2string hashfun formBlock block_difficulty bN0 geN plusN canforge tfdepth sys0 count                   
+                           
 systemTransform = PS.systemTransform 
-                   succN dig2string hashfun formBlock block_difficulty bN0 geN plusN canforge
+                     plusN succN dig2string hashfun formBlock block_difficulty bN0 geN Const.markTimestamp canforge (int2nat Const.lengthConfirmation)                                     --plusN succN dig2string hashfun formBlock block_difficulty bN0 geN markTimestamp canforge lengthConfirmation
 
-genesisBlock = \nFixAccounts -> PS.genesisBlock multN divN doubleN nat2bn 0 nFixAccounts Const.systemBalance Const.goalBlockTime Const.maxRand
-genesisState = \nFixAccounts -> PS.genesisState multN divN doubleN nat2bn 0 nFixAccounts Const.systemBalance Const.goalBlockTime Const.maxRand 
-
-sys = \tfdepth -> \nFixAccounts -> PS.sys  
-   multN divN doubleN succN nat2bn dig2string hashfun formBlock block_difficulty bN0 geN plusN canforge tfdepth nFixAccounts 
-   Const.systemBalance Const.goalBlockTime Const.maxRand 
+genesisBlock =  PS.genesisBlock multN divN doubleN bN0 Const.systemBalance Const.goalBlockTime Const.maxRand 
+             
+genesisState = \nFixAccounts -> \accountParams -> PS.genesisState multN divN doubleN plusN bN0 bN1 nFixAccounts accountParams 
+                                                  Const.systemBalance Const.goalBlockTime Const.maxRand 
+                                                 
+sys = \nFixAccounts -> \accountParams -> PS.sys  
+       multN divN doubleN plusN succN dig2string hashfun formBlock block_difficulty bN0 bN1 geN Const.markTimestamp canforge 
+       (int2nat Const.lengthConfirmation) nFixAccounts accountParams Const.systemBalance Const.goalBlockTime Const.maxRand
+      
                     
-signs =  \tfdepth -> \nFixAccounts -> PS.signs  
-   multN divN doubleN succN nat2bn dig2string hashfun formBlock block_difficulty bN0 geN plusN canforge tfdepth nFixAccounts 
-   Const.systemBalance Const.goalBlockTime Const.maxRand   
-              
-        
-rebalance_sys = PS.rebalance_sys block_difficulty bN0 geN plusN                      
+signs =  \nFixAccounts -> \accountParams -> PS.signs  
+         multN divN doubleN plusN succN dig2string hashfun formBlock block_difficulty bN0 bN1 geN  Const.markTimestamp canforge 
+          (int2nat Const.lengthConfirmation) nFixAccounts accountParams  Const.systemBalance  Const.goalBlockTime  Const.maxRand
+    
+
+rebalance_sys = PS.rebalance_sys plusN block_difficulty bN0 geN                      
  
 sysigns = PS.sysigns
 

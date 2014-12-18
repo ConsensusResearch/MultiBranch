@@ -6,6 +6,24 @@ data Bool =
    True
  | False
 
+andb :: Bool -> Bool -> Bool
+andb b1 b2 =
+  case b1 of {
+   True -> b2;
+   False -> False}
+
+orb :: Bool -> Bool -> Bool
+orb b1 b2 =
+  case b1 of {
+   True -> True;
+   False -> b2}
+
+negb :: Bool -> Bool
+negb b =
+  case b of {
+   True -> False;
+   False -> True}
+
 data Nat =
    O
  | S Nat
@@ -17,11 +35,6 @@ data Option a =
 data Prod a b =
    Pair a b
 
-fst :: (Prod a1 a2) -> a1
-fst p =
-  case p of {
-   Pair x y -> x}
-
 snd :: (Prod a1 a2) -> a2
 snd p =
   case p of {
@@ -30,12 +43,6 @@ snd p =
 data List a =
    Nil
  | Cons a (List a)
-
-length :: (List a1) -> Nat
-length l =
-  case l of {
-   Nil -> O;
-   Cons y l' -> S (length l')}
 
 app :: (List a1) -> (List a1) -> List a1
 app l m =
@@ -262,6 +269,13 @@ fold1 f l =
     case z of {
      Pair x y -> f x y}) cmbl
 
+ltree2list :: (LTree a1) -> List a1
+ltree2list t =
+  case t of {
+   Tgen a -> Cons a Nil;
+   Tcons a t' -> app (ltree2list t') (Cons a Nil);
+   Tfork l t' -> ltree2list t'}
+
 ltreelen :: (LTree a1) -> Nat
 ltreelen t =
   case t of {
@@ -469,18 +483,6 @@ rebalanceS_till x w eqX s0 geS plusS s t =
        Some t3 -> snd (rebalanceS w eqX s0 geS plusS s t3 (Pair None Nil));
        None -> t}}}
 
-beq_nat0 :: Nat -> Nat -> Bool
-beq_nat0 n m =
-  case n of {
-   O ->
-    case m of {
-     O -> True;
-     S m' -> False};
-   S n' ->
-    case m of {
-     O -> False;
-     S m' -> beq_nat0 n' m'}}
-
 type Nattable v = List (Prod Nat v)
 
 search_table :: Nat -> (Nattable a1) -> Option a1
@@ -490,7 +492,7 @@ search_table k t =
    Cons p t' ->
     case p of {
      Pair k' v ->
-      case beq_nat0 k k' of {
+      case beq_nat k k' of {
        True -> Some v;
        False -> search_table k t'}}}
 
@@ -502,7 +504,7 @@ search_place_table0 k t t' =
    Cons p t'' ->
     case p of {
      Pair k' v ->
-      case beq_nat0 k k' of {
+      case beq_nat k k' of {
        True -> Some (Pair v (app t' t''));
        False -> search_place_table0 k t'' (app t' (Cons (Pair k' v) Nil))}}}
 
@@ -531,22 +533,64 @@ type Currency bN = bN
 type HexSPK = Hex
 
 data Account0 bN =
-   Account (Currency bN) Bool HexSPK
+   Account bN (Currency bN) Bool Bool Bool Bool Bool (Option Nat) HexSPK
+
+balance_weight :: (Account0 a1) -> a1
+balance_weight a =
+  case a of {
+   Account balance_weight0 balance0 isForging0 isPublishing0 isMarkable0
+    isMarkFollowing0 isMarkUnfollowing0 tfdepth0 publicKey0 ->
+    balance_weight0}
 
 balance :: (Account0 a1) -> Currency a1
 balance a =
   case a of {
-   Account balance0 isForging0 publicKey0 -> balance0}
+   Account balance_weight0 balance0 isForging0 isPublishing0 isMarkable0
+    isMarkFollowing0 isMarkUnfollowing0 tfdepth0 publicKey0 -> balance0}
 
 isForging :: (Account0 a1) -> Bool
 isForging a =
   case a of {
-   Account balance0 isForging0 publicKey0 -> isForging0}
+   Account balance_weight0 balance0 isForging0 isPublishing0 isMarkable0
+    isMarkFollowing0 isMarkUnfollowing0 tfdepth0 publicKey0 -> isForging0}
+
+isPublishing :: (Account0 a1) -> Bool
+isPublishing a =
+  case a of {
+   Account balance_weight0 balance0 isForging0 isPublishing0 isMarkable0
+    isMarkFollowing0 isMarkUnfollowing0 tfdepth0 publicKey0 -> isPublishing0}
+
+isMarkable :: (Account0 a1) -> Bool
+isMarkable a =
+  case a of {
+   Account balance_weight0 balance0 isForging0 isPublishing0 isMarkable0
+    isMarkFollowing0 isMarkUnfollowing0 tfdepth0 publicKey0 -> isMarkable0}
+
+isMarkFollowing :: (Account0 a1) -> Bool
+isMarkFollowing a =
+  case a of {
+   Account balance_weight0 balance0 isForging0 isPublishing0 isMarkable0
+    isMarkFollowing0 isMarkUnfollowing0 tfdepth0 publicKey0 ->
+    isMarkFollowing0}
+
+isMarkUnfollowing :: (Account0 a1) -> Bool
+isMarkUnfollowing a =
+  case a of {
+   Account balance_weight0 balance0 isForging0 isPublishing0 isMarkable0
+    isMarkFollowing0 isMarkUnfollowing0 tfdepth0 publicKey0 ->
+    isMarkUnfollowing0}
+
+tfdepth :: (Account0 a1) -> Option Nat
+tfdepth a =
+  case a of {
+   Account balance_weight0 balance0 isForging0 isPublishing0 isMarkable0
+    isMarkFollowing0 isMarkUnfollowing0 tfdepth0 publicKey0 -> tfdepth0}
 
 publicKey :: (Account0 a1) -> HexSPK
 publicKey a =
   case a of {
-   Account balance0 isForging0 publicKey0 -> publicKey0}
+   Account balance_weight0 balance0 isForging0 isPublishing0 isMarkable0
+    isMarkFollowing0 isMarkUnfollowing0 tfdepth0 publicKey0 -> publicKey0}
 
 data Transaction0 bN =
    Transaction (Account0 bN) (Account0 bN) (Currency bN) (Currency bN) 
@@ -555,31 +599,49 @@ data Transaction0 bN =
 type BS = HexN
 
 data Block0 bN =
-   Block (List (Transaction0 bN)) bN (Account0 bN) BS (Timestamp bN)
+   Block (List (Transaction0 bN)) Nat bN bN (Account0 bN) BS (Timestamp bN)
+
+transactions :: (Block0 a1) -> List (Transaction0 a1)
+transactions b =
+  case b of {
+   Block transactions0 nMarked0 baseTarget0 totalDifficulty0 generator0
+    generationSignature0 btimestamp0 -> transactions0}
+
+nMarked :: (Block0 a1) -> Nat
+nMarked b =
+  case b of {
+   Block transactions0 nMarked0 baseTarget0 totalDifficulty0 generator0
+    generationSignature0 btimestamp0 -> nMarked0}
 
 baseTarget :: (Block0 a1) -> a1
 baseTarget b =
   case b of {
-   Block transactions baseTarget0 generator0 generationSignature0
-    btimestamp0 -> baseTarget0}
+   Block transactions0 nMarked0 baseTarget0 totalDifficulty0 generator0
+    generationSignature0 btimestamp0 -> baseTarget0}
+
+totalDifficulty :: (Block0 a1) -> a1
+totalDifficulty b =
+  case b of {
+   Block transactions0 nMarked0 baseTarget0 totalDifficulty0 generator0
+    generationSignature0 btimestamp0 -> totalDifficulty0}
 
 generator :: (Block0 a1) -> Account0 a1
 generator b =
   case b of {
-   Block transactions baseTarget0 generator0 generationSignature0
-    btimestamp0 -> generator0}
+   Block transactions0 nMarked0 baseTarget0 totalDifficulty0 generator0
+    generationSignature0 btimestamp0 -> generator0}
 
 generationSignature :: (Block0 a1) -> BS
 generationSignature b =
   case b of {
-   Block transactions baseTarget0 generator0 generationSignature0
-    btimestamp0 -> generationSignature0}
+   Block transactions0 nMarked0 baseTarget0 totalDifficulty0 generator0
+    generationSignature0 btimestamp0 -> generationSignature0}
 
 btimestamp :: (Block0 a1) -> Timestamp a1
 btimestamp b =
   case b of {
-   Block transactions baseTarget0 generator0 generationSignature0
-    btimestamp0 -> btimestamp0}
+   Block transactions0 nMarked0 baseTarget0 totalDifficulty0 generator0
+    generationSignature0 btimestamp0 -> btimestamp0}
 
 eqb_block :: (Block0 a1) -> (Block0 a1) -> Bool
 eqb_block b1 b2 =
@@ -609,62 +671,76 @@ pushBlock pb bc b =
   case ltree_grow2 pb b eqb_block bc of {
    Pair parb newbs -> Pair parb newbs}
 
+markBlock :: Nat -> (Block0 a1) -> Block0 a1
+markBlock n b =
+  Block (transactions b) (S n) (baseTarget b) (totalDifficulty b)
+    (generator b) (generationSignature b) (btimestamp b)
+
+isnatpos :: Nat -> Bool
+isnatpos n =
+  case n of {
+   O -> False;
+   S n0 -> True}
+
 generateBlock :: ((Block0 a1) -> (Account0 a1) -> (Timestamp a1) -> (List
-                 (Transaction0 a1)) -> HexSPK -> Block0 a1) -> (Blockchain
-                 a1) -> (Block0 a1) -> (Account0 a1) -> (Timestamp a1) ->
-                 (List (Transaction0 a1)) -> HexSPK -> Prod
+                 (Transaction0 a1)) -> HexSPK -> Block0 a1) -> (a1 -> a1 ->
+                 Bool) -> (Timestamp a1) -> (Blockchain a1) -> (Block0 
+                 a1) -> (Account0 a1) -> (Timestamp a1) -> (List
+                 (Transaction0 a1)) -> HexSPK -> Prod
                  (Prod (Block0 a1) (Option (Block0 a1))) (Blockchain a1)
-generateBlock formBlock bc pb acc ts txs pk =
-  let {newblock = formBlock pb acc ts txs pk} in
+generateBlock formBlock geN markTimestamp bc pb acc ts txs pk =
+  let {newblock' = formBlock pb acc ts txs pk} in
+  let {bMark = isnatpos (nMarked pb)} in
+  let {bTimeMore = geN ts markTimestamp} in
+  let {bBlockOld = negb (geN (btimestamp pb) markTimestamp)} in
+  let {
+   newblock = case orb bMark
+                     (andb (isMarkable acc) (andb bTimeMore bBlockOld)) of {
+               True -> markBlock (nMarked pb) newblock';
+               False -> newblock'}}
+  in
   case pushBlock pb bc newblock of {
    Pair parb newbc -> Pair (Pair newblock parb) newbc}
 
 data Node0 bN =
    Node (Blockchain bN) (Option (Block0 bN)) (List (Transaction0 bN)) 
- (List (Prod (Block0 bN) (Block0 bN))) (List (Block0 bN)) (List (Block0 bN)) 
- (Account0 bN)
+ (List (Prod (Block0 bN) (Block0 bN))) (List (Block0 bN)) (Account0 bN)
 
 nodechain :: (Node0 a1) -> Blockchain a1
 nodechain n =
   case n of {
    Node nodechain0 changedBlock0 unconfirmedTxs0 pending_blocks0 open_blocks0
-    pending_open_blocks0 node_account0 -> nodechain0}
+    node_account0 -> nodechain0}
 
 changedBlock :: (Node0 a1) -> Option (Block0 a1)
 changedBlock n =
   case n of {
    Node nodechain0 changedBlock0 unconfirmedTxs0 pending_blocks0 open_blocks0
-    pending_open_blocks0 node_account0 -> changedBlock0}
+    node_account0 -> changedBlock0}
 
 unconfirmedTxs :: (Node0 a1) -> List (Transaction0 a1)
 unconfirmedTxs n =
   case n of {
    Node nodechain0 changedBlock0 unconfirmedTxs0 pending_blocks0 open_blocks0
-    pending_open_blocks0 node_account0 -> unconfirmedTxs0}
+    node_account0 -> unconfirmedTxs0}
 
 pending_blocks :: (Node0 a1) -> List (Prod (Block0 a1) (Block0 a1))
 pending_blocks n =
   case n of {
    Node nodechain0 changedBlock0 unconfirmedTxs0 pending_blocks0 open_blocks0
-    pending_open_blocks0 node_account0 -> pending_blocks0}
+    node_account0 -> pending_blocks0}
 
 open_blocks :: (Node0 a1) -> List (Block0 a1)
 open_blocks n =
   case n of {
    Node nodechain0 changedBlock0 unconfirmedTxs0 pending_blocks0 open_blocks0
-    pending_open_blocks0 node_account0 -> open_blocks0}
-
-pending_open_blocks :: (Node0 a1) -> List (Block0 a1)
-pending_open_blocks n =
-  case n of {
-   Node nodechain0 changedBlock0 unconfirmedTxs0 pending_blocks0 open_blocks0
-    pending_open_blocks0 node_account0 -> pending_open_blocks0}
+    node_account0 -> open_blocks0}
 
 node_account :: (Node0 a1) -> Account0 a1
 node_account n =
   case n of {
    Node nodechain0 changedBlock0 unconfirmedTxs0 pending_blocks0 open_blocks0
-    pending_open_blocks0 node_account0 -> node_account0}
+    node_account0 -> node_account0}
 
 effectiveBalance :: (Account0 a1) -> Currency a1
 effectiveBalance =
@@ -676,7 +752,7 @@ addSortedBlock geN b lb =
   case lb of {
    Nil -> Cons b Nil;
    Cons b' bs ->
-    case geN (baseTarget b) (baseTarget b') of {
+    case geN (totalDifficulty b) (totalDifficulty b') of {
      True -> Cons b lb;
      False -> Cons b' (addSortedBlock geN b bs)}}
 
@@ -695,10 +771,10 @@ earlierBlock geN mb1 mb2 =
 
 forge_block :: ((Block0 a1) -> (Account0 a1) -> (Timestamp a1) -> (List
                (Transaction0 a1)) -> HexSPK -> Block0 a1) -> (a1 -> a1 ->
-               Bool) -> ((Node0 a1) -> (Timestamp a1) -> (Block0 a1) -> Bool)
-               -> (Node0 a1) -> (Timestamp a1) -> (Block0 a1) -> Node0 
-               a1
-forge_block formBlock geN canforge nd ts pb =
+               Bool) -> (Timestamp a1) -> ((Node0 a1) -> (Timestamp a1) ->
+               (Block0 a1) -> Bool) -> (Node0 a1) -> (Timestamp a1) ->
+               (Block0 a1) -> Node0 a1
+forge_block formBlock geN markTimestamp canforge nd ts pb =
   let {txs = unconfirmedTxs nd} in
   let {acct = node_account nd} in
   let {bc = nodechain nd} in
@@ -706,16 +782,15 @@ forge_block formBlock geN canforge nd ts pb =
   let {canf = canforge nd ts pb} in
   let {pendb = pending_blocks nd} in
   let {openb = open_blocks nd} in
-  let {popenb = pending_open_blocks nd} in
   let {chb = changedBlock nd} in
   case canf of {
    True ->
-    case generateBlock formBlock bc pb acct ts txs pk of {
+    case generateBlock formBlock geN markTimestamp bc pb acct ts txs pk of {
      Pair newbp newbc ->
       case newbp of {
        Pair newb parb -> Node newbc (earlierBlock geN chb parb) Nil (Cons
-        (Pair pb newb) pendb) openb (addSortedBlock geN newb popenb) acct}};
-   False -> Node bc chb Nil pendb openb (addSortedBlock geN pb popenb) acct}
+        (Pair pb newb) pendb) (addSortedBlock geN newb openb) acct}};
+   False -> Node bc chb Nil pendb (addSortedBlock geN pb openb) acct}
 
 splitn :: Nat -> (List a1) -> Prod (List a1) (List a1)
 splitn n l =
@@ -728,41 +803,154 @@ splitn n l =
       case splitn n' xs of {
        Pair l1 l2 -> Pair (Cons x l1) l2}}}
 
+blt_nat :: Nat -> Nat -> Bool
+blt_nat n m =
+  case n of {
+   O ->
+    case m of {
+     O -> False;
+     S n0 -> True};
+   S n' ->
+    case m of {
+     O -> False;
+     S m' -> blt_nat n' m'}}
+
+markedBlocks :: Nat -> (Block0 a1) -> Bool
+markedBlocks lengthConfirmation b =
+  andb (blt_nat (nMarked b) lengthConfirmation) (blt_nat O (nMarked b))
+
+unmarkedBlocks :: (Block0 a1) -> Bool
+unmarkedBlocks b =
+  negb (isnatpos (nMarked b))
+
+getOpenBlocks :: (Option Nat) -> (List (Block0 a1)) -> (List (Block0 a1)) ->
+                 Prod (List (Block0 a1)) (List (Block0 a1))
+getOpenBlocks tfdepth0 opb defl =
+  case tfdepth0 of {
+   Some tfd ->
+    case tfd of {
+     O -> Pair defl Nil;
+     S n -> splitn tfd opb};
+   None -> Pair opb Nil}
+
 forge_blocks :: ((Block0 a1) -> (Account0 a1) -> (Timestamp a1) -> (List
                 (Transaction0 a1)) -> HexSPK -> Block0 a1) -> (a1 -> a1 ->
-                Bool) -> ((Node0 a1) -> (Timestamp a1) -> (Block0 a1) ->
-                Bool) -> (Option Nat) -> (Node0 a1) -> (Timestamp a1) ->
-                Node0 a1
-forge_blocks formBlock geN canforge tfdepth nd ts =
+                Bool) -> (Timestamp a1) -> ((Node0 a1) -> (Timestamp 
+                a1) -> (Block0 a1) -> Bool) -> Nat -> (Node0 a1) ->
+                (Timestamp a1) -> Node0 a1
+forge_blocks formBlock geN markTimestamp canforge lengthConfirmation nd ts =
+  let {acc = node_account nd} in
   let {bc = nodechain nd} in
-  let {
-   blocks0 = case tfdepth of {
-              Some tfd ->
-               case tfd of {
-                O -> lastblocks bc;
-                S n -> fst (splitn tfd (open_blocks nd))};
-              None -> open_blocks nd}}
-  in
-  let {
-   newn = fold_left (\n pb -> forge_block formBlock geN canforge n ts pb)
-            blocks0 nd}
-  in
-  Node (nodechain newn) (changedBlock newn) (unconfirmedTxs newn)
-  (pending_blocks newn) (pending_open_blocks newn) Nil (node_account newn)
+  let {opb = open_blocks nd} in
+  case getOpenBlocks (tfdepth acc) opb (lastblocks bc) of {
+   Pair blocks' rb' ->
+    case isMarkFollowing acc of {
+     True ->
+      case partition (markedBlocks lengthConfirmation) blocks' of {
+       Pair l l' ->
+        let {rb = app l' rb'} in
+        let {
+         bConfirmed = case opb of {
+                       Nil -> False;
+                       Cons b l0 -> blt_nat lengthConfirmation (nMarked b)}}
+        in
+        let {
+         acc' = Account (balance_weight acc) (balance acc) (isForging acc)
+          (isPublishing acc) (isMarkable acc)
+          (andb (isMarkFollowing acc) (negb bConfirmed))
+          (orb (isMarkUnfollowing acc)
+            (andb bConfirmed (isMarkFollowing acc))) (tfdepth acc)
+          (publicKey acc)}
+        in
+        let {
+         nd' = Node (nodechain nd) (changedBlock nd) (unconfirmedTxs nd)
+          (pending_blocks nd) rb acc'}
+        in
+        fold_left (\n pb ->
+          forge_block formBlock geN markTimestamp canforge n ts pb) l nd'};
+     False ->
+      case isMarkUnfollowing acc of {
+       True ->
+        case partition unmarkedBlocks blocks' of {
+         Pair l l' ->
+          let {rb = app l' rb'} in
+          let {
+           bConfirmed = case opb of {
+                         Nil -> False;
+                         Cons b l0 -> blt_nat lengthConfirmation (nMarked b)}}
+          in
+          let {
+           acc' = Account (balance_weight acc) (balance acc) (isForging acc)
+            (isPublishing acc) (isMarkable acc)
+            (andb (isMarkFollowing acc) (negb bConfirmed))
+            (orb (isMarkUnfollowing acc)
+              (andb bConfirmed (isMarkFollowing acc))) (tfdepth acc)
+            (publicKey acc)}
+          in
+          let {
+           nd' = Node (nodechain nd) (changedBlock nd) (unconfirmedTxs nd)
+            (pending_blocks nd) rb acc'}
+          in
+          fold_left (\n pb ->
+            forge_block formBlock geN markTimestamp canforge n ts pb) l nd'};
+       False ->
+        let {
+         bConfirmed = case opb of {
+                       Nil -> False;
+                       Cons b l -> blt_nat lengthConfirmation (nMarked b)}}
+        in
+        let {
+         acc' = Account (balance_weight acc) (balance acc) (isForging acc)
+          (isPublishing acc) (isMarkable acc)
+          (andb (isMarkFollowing acc) (negb bConfirmed))
+          (orb (isMarkUnfollowing acc)
+            (andb bConfirmed (isMarkFollowing acc))) (tfdepth acc)
+          (publicKey acc)}
+        in
+        let {
+         nd' = Node (nodechain nd) (changedBlock nd) (unconfirmedTxs nd)
+          (pending_blocks nd) rb' acc'}
+        in
+        fold_left (\n pb ->
+          forge_block formBlock geN markTimestamp canforge n ts pb) blocks'
+          nd'}}}
 
-accountByPK :: a1 -> HexSPK -> Account0 a1
-accountByPK bN0 pk =
-  Account bN0 True pk
+defaultAccount :: a1 -> a1 -> HexSPK -> Account0 a1
+defaultAccount bN0 bN1 pk =
+  Account bN1 bN0 True True False False False (Some O) pk
 
-xseries :: Nat -> a1 -> (a1 -> a1) -> List a1
-xseries n x succX =
+fixAccounts :: a1 -> a1 -> HexSPK -> Nat -> (List
+               (Prod (Prod (Prod (Prod a1 Bool) Bool) Bool) (Option Nat))) ->
+               List (Account0 a1)
+fixAccounts bN0 bN1 h n l =
   case n of {
    O -> Nil;
-   S n' -> Cons x (xseries n' (succX x) succX)}
+   S n' ->
+    case l of {
+     Nil -> Cons (defaultAccount bN0 bN1 h)
+      (fixAccounts bN0 bN1 (succH h) n' l);
+     Cons ap l' ->
+      case ap of {
+       Pair f1 tfd ->
+        case f1 of {
+         Pair f2 iMF ->
+          case f2 of {
+           Pair f3 iMA ->
+            case f3 of {
+             Pair w iP -> Cons (Account w bN0 True iP iMA iMF False tfd h)
+              (fixAccounts bN0 bN1 (succH h) n' l')}}}}}}
 
-fixAccounts :: a1 -> Nat -> List (Account0 a1)
-fixAccounts bN0 nFixAccounts =
-  let {pks = xseries nFixAccounts H1 succH} in map (accountByPK bN0) pks
+sysAccounts :: (a1 -> a1 -> a1) -> (a1 -> a1 -> a1) -> (a1 -> a1 -> a1) -> a1
+               -> a1 -> Nat -> (List
+               (Prod (Prod (Prod (Prod a1 Bool) Bool) Bool) (Option Nat))) ->
+               (Currency a1) -> List (Account0 a1)
+sysAccounts multN divN plusN bN0 bN1 nFixAccounts accountParams systemBalance =
+  let {accs0 = fixAccounts bN0 bN1 H1 nFixAccounts accountParams} in
+  let {w = fold_left plusN (map balance_weight accs0) bN0} in
+  map (\acc -> Account (balance_weight acc)
+    (divN (multN (balance_weight acc) systemBalance) w) (isForging acc)
+    (isPublishing acc) (isMarkable acc) (isMarkFollowing acc)
+    (isMarkUnfollowing acc) (tfdepth acc) (publicKey acc)) accs0
 
 data Connection0 bN =
    Connection (Node0 bN) (Node0 bN)
@@ -793,7 +981,7 @@ timestamp s =
 
 godAccount :: a1 -> Account0 a1
 godAccount bN0 =
-  Account bN0 False H0
+  Account bN0 bN0 False False False False False None H0
 
 initialBaseTarget :: (a1 -> a1 -> a1) -> (a1 -> a1 -> a1) -> (a1 -> a1) ->
                      (Currency a1) -> a1 -> a1 -> a1
@@ -807,36 +995,34 @@ maxBaseTarget multN divN doubleN systemBalance goalBlockTime maxRand =
     (initialBaseTarget multN divN doubleN systemBalance goalBlockTime
       maxRand) systemBalance
 
-genesisBlock :: (a1 -> a1 -> a1) -> (a1 -> a1 -> a1) -> (a1 -> a1) -> (Nat ->
-                a1) -> a1 -> Nat -> (Currency a1) -> a1 -> a1 -> Block0 
-                a1
-genesisBlock multN divN doubleN nat2bn bN0 nFixAccounts systemBalance goalBlockTime maxRand =
-  let {genesisTxs = Nil} in
-  Block genesisTxs
-  (initialBaseTarget multN divN doubleN systemBalance goalBlockTime maxRand)
-  (godAccount bN0) (Cons H0 Nil) bN0
+genesisBlock :: (a1 -> a1 -> a1) -> (a1 -> a1 -> a1) -> (a1 -> a1) -> a1 ->
+                (Currency a1) -> a1 -> a1 -> Block0 a1
+genesisBlock multN divN doubleN bN0 systemBalance goalBlockTime maxRand =
+  Block Nil O
+    (initialBaseTarget multN divN doubleN systemBalance goalBlockTime
+      maxRand)
+    (initialBaseTarget multN divN doubleN systemBalance goalBlockTime
+      maxRand) (godAccount bN0) (Cons H0 Nil) bN0
 
-genesisState :: (a1 -> a1 -> a1) -> (a1 -> a1 -> a1) -> (a1 -> a1) -> (Nat ->
-                a1) -> a1 -> Nat -> (Currency a1) -> a1 -> a1 -> System0 
-                a1
-genesisState multN divN doubleN nat2bn bN0 nFixAccounts systemBalance goalBlockTime maxRand =
-  let {invsc = nat2bn (length (fixAccounts bN0 nFixAccounts))} in
+genesisState :: (a1 -> a1 -> a1) -> (a1 -> a1 -> a1) -> (a1 -> a1) -> (a1 ->
+                a1 -> a1) -> a1 -> a1 -> Nat -> (List
+                (Prod (Prod (Prod (Prod a1 Bool) Bool) Bool) (Option Nat)))
+                -> (Currency a1) -> a1 -> a1 -> System0 a1
+genesisState multN divN doubleN plusN bN0 bN1 nFixAccounts accountParams systemBalance goalBlockTime maxRand =
   let {
-   invs = map (\acc -> Account (divN systemBalance invsc) (isForging acc)
-            (publicKey acc)) (fixAccounts bN0 nFixAccounts)}
+   accs = sysAccounts multN divN plusN bN0 bN1 nFixAccounts accountParams
+            systemBalance}
   in
   let {
    chain = Tgen
-    (genesisBlock multN divN doubleN nat2bn bN0 nFixAccounts systemBalance
-      goalBlockTime maxRand)}
+    (genesisBlock multN divN doubleN bN0 systemBalance goalBlockTime maxRand)}
   in
   let {
    nodes0 = map (\acc -> Node chain None Nil Nil (Cons
-              (genesisBlock multN divN doubleN nat2bn bN0 nFixAccounts
-                systemBalance goalBlockTime maxRand) Nil) Nil acc) invs}
+              (genesisBlock multN divN doubleN bN0 systemBalance
+                goalBlockTime maxRand) Nil) acc) accs}
   in
-  System nodes0 Nil (Cons (godAccount bN0) (fixAccounts bN0 nFixAccounts))
-  bN0
+  System nodes0 Nil (Cons (godAccount bN0) accs) bN0
 
 sendBlock :: (a2 -> BS) -> (HexN -> a2) -> (a1 -> a1 -> Bool) -> (Node0 
              a1) -> (Node0 a1) -> (Prod (Block0 a1) (Block0 a1)) -> Node0 
@@ -854,28 +1040,33 @@ sendBlock dig2string hashfun geN sender receiver bseq =
        Pair parb newbc -> Node newbc (earlierBlock geN chb parb)
         (unconfirmedTxs receiver) (pending_blocks receiver)
         (addSortedBlock geN newb (open_blocks receiver))
-        (pending_open_blocks receiver) (node_account receiver)};
+        (node_account receiver)};
      False -> receiver}}
+
+eqbAccounts :: (Account0 a1) -> (Account0 a1) -> Bool
+eqbAccounts a1 a2 =
+  eqb_hex (publicKey a1) (publicKey a2)
 
 sendBlocks :: (a2 -> BS) -> (HexN -> a2) -> (a1 -> a1 -> Bool) -> (Node0 
               a1) -> (Node0 a1) -> Node0 a1
 sendBlocks dig2string hashfun geN sender receiver =
-  case eqb_hex (publicKey (node_account sender))
-         (publicKey (node_account receiver)) of {
-   True -> receiver;
-   False ->
+  case andb
+         (negb (eqbAccounts (node_account sender) (node_account receiver)))
+         (isPublishing (node_account sender)) of {
+   True ->
     fold_left (\n pbb -> sendBlock dig2string hashfun geN sender n pbb)
-      (pending_blocks sender) receiver}
+      (pending_blocks sender) receiver;
+   False -> receiver}
 
-postforge :: ((Block0 a1) -> a1) -> a1 -> (a1 -> a1 -> Bool) -> (a1 -> a1 ->
-             a1) -> (Option Nat) -> (Node0 a1) -> Node0 a1
-postforge block_difficulty bN0 geN plusN tfdepth n =
+postforge :: (a1 -> a1 -> a1) -> ((Block0 a1) -> a1) -> a1 -> (a1 -> a1 ->
+             Bool) -> (Node0 a1) -> Node0 a1
+postforge plusN block_difficulty bN0 geN n =
   let {bc = nodechain n} in
   let {txs = unconfirmedTxs n} in
   let {acc = node_account n} in
   let {chb = changedBlock n} in
   let {
-   newbc = case tfdepth of {
+   newbc = case tfdepth acc of {
             Some tfd ->
              case tfd of {
               O ->
@@ -887,11 +1078,11 @@ postforge block_difficulty bN0 geN plusN tfdepth n =
               S n0 -> bc};
             None -> bc}}
   in
-  Node newbc None txs Nil (open_blocks n) Nil acc
+  Node newbc None txs Nil (open_blocks n) acc
 
-rebalance_chain :: ((Block0 a1) -> a1) -> a1 -> (a1 -> a1 -> Bool) -> (a1 ->
-                   a1 -> a1) -> (Node0 a1) -> Node0 a1
-rebalance_chain block_difficulty bN0 geN plusN n =
+rebalance_chain :: (a1 -> a1 -> a1) -> ((Block0 a1) -> a1) -> a1 -> (a1 -> a1
+                   -> Bool) -> (Node0 a1) -> Node0 a1
+rebalance_chain plusN block_difficulty bN0 geN n =
   let {bc = nodechain n} in
   let {txs = unconfirmedTxs n} in
   let {acc = node_account n} in
@@ -900,24 +1091,25 @@ rebalance_chain block_difficulty bN0 geN plusN n =
              (rebalanceS block_difficulty eqb_block bN0 geN plusN bN0 bc
                (Pair None Nil))}
   in
-  Node newbc None txs Nil (open_blocks n) Nil acc
+  Node newbc None txs Nil (open_blocks n) acc
 
-rebalance_sys :: ((Block0 a1) -> a1) -> a1 -> (a1 -> a1 -> Bool) -> (a1 -> a1
-                 -> a1) -> (System0 a1) -> System0 a1
-rebalance_sys block_difficulty bN0 geN plusN s =
-  System (map (rebalance_chain block_difficulty bN0 geN plusN) (nodes s))
+rebalance_sys :: (a1 -> a1 -> a1) -> ((Block0 a1) -> a1) -> a1 -> (a1 -> a1
+                 -> Bool) -> (System0 a1) -> System0 a1
+rebalance_sys plusN block_difficulty bN0 geN s =
+  System (map (rebalance_chain plusN block_difficulty bN0 geN) (nodes s))
     (connections s) (accounts s) (timestamp s)
 
-systemEvents :: (a2 -> BS) -> (HexN -> a2) -> ((Block0 a1) -> (Account0 
-                a1) -> (Timestamp a1) -> (List (Transaction0 a1)) -> HexSPK
-                -> Block0 a1) -> ((Block0 a1) -> a1) -> a1 -> (a1 -> a1 ->
-                Bool) -> (a1 -> a1 -> a1) -> ((Node0 a1) -> (Timestamp 
-                a1) -> (Block0 a1) -> Bool) -> (Option Nat) -> (Timestamp 
-                a1) -> (System0 a1) -> System0 a1
-systemEvents dig2string hashfun formBlock block_difficulty bN0 geN plusN canforge tfdepth ts sys0 =
+systemEvents :: (a1 -> a1 -> a1) -> (a2 -> BS) -> (HexN -> a2) -> ((Block0
+                a1) -> (Account0 a1) -> (Timestamp a1) -> (List
+                (Transaction0 a1)) -> HexSPK -> Block0 a1) -> ((Block0 
+                a1) -> a1) -> a1 -> (a1 -> a1 -> Bool) -> (Timestamp 
+                a1) -> ((Node0 a1) -> (Timestamp a1) -> (Block0 a1) -> Bool)
+                -> Nat -> (Timestamp a1) -> (System0 a1) -> System0 a1
+systemEvents plusN dig2string hashfun formBlock block_difficulty bN0 geN markTimestamp canforge lengthConfirmation ts sys0 =
   let {
-   nodes' = map (\n -> forge_blocks formBlock geN canforge tfdepth n ts)
-              (nodes sys0)}
+   nodes' = map (\n ->
+              forge_blocks formBlock geN markTimestamp canforge
+                lengthConfirmation n ts) (nodes sys0)}
   in
   case partition (\n -> is_nilb (pending_blocks n)) nodes' of {
    Pair nonForgers forgers ->
@@ -927,63 +1119,147 @@ systemEvents dig2string hashfun formBlock block_difficulty bN0 geN plusN canforg
                         sendBlocks dig2string hashfun geN n_from n_to')
                         forgers n_to) nodes'}
     in
-    System
-    (map (postforge block_difficulty bN0 geN plusN tfdepth) alteredNodes)
+    System (map (postforge plusN block_difficulty bN0 geN) alteredNodes)
     (connections sys0) (accounts sys0) ts}
 
-systemTransform :: (a1 -> a1) -> (a2 -> BS) -> (HexN -> a2) -> ((Block0 
-                   a1) -> (Account0 a1) -> (Timestamp a1) -> (List
-                   (Transaction0 a1)) -> HexSPK -> Block0 a1) -> ((Block0 
-                   a1) -> a1) -> a1 -> (a1 -> a1 -> Bool) -> (a1 -> a1 -> a1)
-                   -> ((Node0 a1) -> (Timestamp a1) -> (Block0 a1) -> Bool)
-                   -> (Option Nat) -> (System0 a1) -> Nat -> System0 
+systemTransform :: (a1 -> a1 -> a1) -> (a1 -> a1) -> (a2 -> BS) -> (HexN ->
+                   a2) -> ((Block0 a1) -> (Account0 a1) -> (Timestamp 
+                   a1) -> (List (Transaction0 a1)) -> HexSPK -> Block0 
+                   a1) -> ((Block0 a1) -> a1) -> a1 -> (a1 -> a1 -> Bool) ->
+                   (Timestamp a1) -> ((Node0 a1) -> (Timestamp a1) -> (Block0
+                   a1) -> Bool) -> Nat -> (System0 a1) -> Nat -> System0 
                    a1
-systemTransform succN dig2string hashfun formBlock block_difficulty bN0 geN plusN canforge tfdepth sys0 count =
+systemTransform plusN succN dig2string hashfun formBlock block_difficulty bN0 geN markTimestamp canforge lengthConfirmation sys0 count =
   let {t = timestamp sys0} in
   case count of {
    O -> sys0;
    S c' ->
-    systemTransform succN dig2string hashfun formBlock block_difficulty bN0
-      geN plusN canforge tfdepth
-      (systemEvents dig2string hashfun formBlock block_difficulty bN0 geN
-        plusN canforge tfdepth (succN t) sys0) c'}
+    systemTransform plusN succN dig2string hashfun formBlock block_difficulty
+      bN0 geN markTimestamp canforge lengthConfirmation
+      (systemEvents plusN dig2string hashfun formBlock block_difficulty bN0
+        geN markTimestamp canforge lengthConfirmation (succN t) sys0) c'}
 
-sys :: (a1 -> a1 -> a1) -> (a1 -> a1 -> a1) -> (a1 -> a1) -> (a1 -> a1) ->
-       (Nat -> a1) -> (a2 -> BS) -> (HexN -> a2) -> ((Block0 a1) -> (Account0
-       a1) -> (Timestamp a1) -> (List (Transaction0 a1)) -> HexSPK -> Block0
-       a1) -> ((Block0 a1) -> a1) -> a1 -> (a1 -> a1 -> Bool) -> (a1 -> a1 ->
-       a1) -> ((Node0 a1) -> (Timestamp a1) -> (Block0 a1) -> Bool) ->
-       (Option Nat) -> Nat -> (Currency a1) -> a1 -> a1 -> Nat -> System0 
-       a1
-sys multN divN doubleN succN nat2bn dig2string hashfun formBlock block_difficulty bN0 geN plusN canforge tfdepth nFixAccounts systemBalance goalBlockTime maxRand n =
-  systemTransform succN dig2string hashfun formBlock block_difficulty bN0 geN
-    plusN canforge tfdepth
-    (genesisState multN divN doubleN nat2bn bN0 nFixAccounts systemBalance
-      goalBlockTime maxRand) n
+sys :: (a1 -> a1 -> a1) -> (a1 -> a1 -> a1) -> (a1 -> a1) -> (a1 -> a1 -> a1)
+       -> (a1 -> a1) -> (a2 -> BS) -> (HexN -> a2) -> ((Block0 a1) ->
+       (Account0 a1) -> (Timestamp a1) -> (List (Transaction0 a1)) -> HexSPK
+       -> Block0 a1) -> ((Block0 a1) -> a1) -> a1 -> a1 -> (a1 -> a1 -> Bool)
+       -> (Timestamp a1) -> ((Node0 a1) -> (Timestamp a1) -> (Block0 
+       a1) -> Bool) -> Nat -> Nat -> (List
+       (Prod (Prod (Prod (Prod a1 Bool) Bool) Bool) (Option Nat))) ->
+       (Currency a1) -> a1 -> a1 -> Nat -> System0 a1
+sys multN divN doubleN plusN succN dig2string hashfun formBlock block_difficulty bN0 bN1 geN markTimestamp canforge lengthConfirmation nFixAccounts accountParams systemBalance goalBlockTime maxRand n =
+  systemTransform plusN succN dig2string hashfun formBlock block_difficulty
+    bN0 geN markTimestamp canforge lengthConfirmation
+    (genesisState multN divN doubleN plusN bN0 bN1 nFixAccounts accountParams
+      systemBalance goalBlockTime maxRand) n
 
 sysblocks :: (System0 a1) -> List (LTree (Block0 a1))
 sysblocks s =
   map blocks (map nodechain (nodes s))
 
-signs :: (a1 -> a1 -> a1) -> (a1 -> a1 -> a1) -> (a1 -> a1) -> (a1 -> a1) ->
-         (Nat -> a1) -> (a2 -> BS) -> (HexN -> a2) -> ((Block0 a1) ->
-         (Account0 a1) -> (Timestamp a1) -> (List (Transaction0 a1)) ->
-         HexSPK -> Block0 a1) -> ((Block0 a1) -> a1) -> a1 -> (a1 -> a1 ->
-         Bool) -> (a1 -> a1 -> a1) -> ((Node0 a1) -> (Timestamp a1) ->
-         (Block0 a1) -> Bool) -> (Option Nat) -> Nat -> (Currency a1) -> a1
-         -> a1 -> Nat -> List (LTree HexSPK)
-signs multN divN doubleN succN nat2bn dig2string hashfun formBlock block_difficulty bN0 geN plusN canforge tfdepth nFixAccounts systemBalance goalBlockTime maxRand n =
-  map (\tb -> ltree_map (\b -> publicKey (generator b)) tb)
+data Mhex =
+   N0
+ | N1
+ | N2
+ | N3
+ | N4
+ | N5
+ | N6
+ | N7
+ | N8
+ | N9
+ | NA
+ | NB
+ | NC
+ | ND
+ | NE
+ | NF
+ | M0
+ | M1
+ | M2
+ | M3
+ | M4
+ | M5
+ | M6
+ | M7
+ | M8
+ | M9
+ | MA
+ | MB
+ | MC
+ | MD
+ | ME
+ | MF
+
+hex2mhex :: Bool -> Hex -> Mhex
+hex2mhex m h =
+  case m of {
+   True ->
+    case h of {
+     H0 -> M0;
+     H1 -> M1;
+     H2 -> M2;
+     H3 -> M3;
+     H4 -> M4;
+     H5 -> M5;
+     H6 -> M6;
+     H7 -> M7;
+     H8 -> M8;
+     H9 -> M9;
+     HA -> MA;
+     HB -> MB;
+     HC -> MC;
+     HD -> MD;
+     HE -> ME;
+     HF -> MF};
+   False ->
+    case h of {
+     H0 -> N0;
+     H1 -> N1;
+     H2 -> N2;
+     H3 -> N3;
+     H4 -> N4;
+     H5 -> N5;
+     H6 -> N6;
+     H7 -> N7;
+     H8 -> N8;
+     H9 -> N9;
+     HA -> NA;
+     HB -> NB;
+     HC -> NC;
+     HD -> ND;
+     HE -> NE;
+     HF -> NF}}
+
+showblock :: (Block0 a1) -> Mhex
+showblock b =
+  hex2mhex (isnatpos (nMarked b)) (publicKey (generator b))
+
+signs :: (a1 -> a1 -> a1) -> (a1 -> a1 -> a1) -> (a1 -> a1) -> (a1 -> a1 ->
+         a1) -> (a1 -> a1) -> (a2 -> BS) -> (HexN -> a2) -> ((Block0 
+         a1) -> (Account0 a1) -> (Timestamp a1) -> (List (Transaction0 a1))
+         -> HexSPK -> Block0 a1) -> ((Block0 a1) -> a1) -> a1 -> a1 -> (a1 ->
+         a1 -> Bool) -> (Timestamp a1) -> ((Node0 a1) -> (Timestamp a1) ->
+         (Block0 a1) -> Bool) -> Nat -> Nat -> (List
+         (Prod (Prod (Prod (Prod a1 Bool) Bool) Bool) (Option Nat))) ->
+         (Currency a1) -> a1 -> a1 -> Nat -> List (LTree Mhex)
+signs multN divN doubleN plusN succN dig2string hashfun formBlock block_difficulty bN0 bN1 geN markTimestamp canforge lengthConfirmation nFixAccounts accountParams systemBalance goalBlockTime maxRand n =
+  map (\tb -> ltree_map (\b -> showblock b) tb)
     (map blocks
       (map nodechain
         (nodes
-          (sys multN divN doubleN succN nat2bn dig2string hashfun formBlock
-            block_difficulty bN0 geN plusN canforge tfdepth nFixAccounts
-            systemBalance goalBlockTime maxRand n))))
+          (sys multN divN doubleN plusN succN dig2string hashfun formBlock
+            block_difficulty bN0 bN1 geN markTimestamp canforge
+            lengthConfirmation nFixAccounts accountParams systemBalance
+            goalBlockTime maxRand n))))
 
-sysigns :: (System0 a1) -> List (LTree HexSPK)
+sysigns :: (System0 a1) -> List (LTree Mhex)
 sysigns s =
-  map (\tb -> ltree_map (\b -> publicKey (generator b)) tb) (sysblocks s)
+  map (\tb -> ltree_map (\b -> showblock b) tb) (sysblocks s)
+
+sysaccs :: (System0 a1) -> List (Account0 a1)
+sysaccs s =
+  map node_account (nodes s)
 
 addsucc :: (Nattable Nat) -> Nat -> Nattable Nat
 addsucc ht k =

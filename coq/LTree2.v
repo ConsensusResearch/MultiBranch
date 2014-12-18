@@ -179,6 +179,13 @@ Proof.
  auto.
 Qed. 
 
+Fixpoint ltree2list {X: Type} (t: LTree X) : list X :=
+match t with
+| tgen a => [a]
+| t' # a => (ltree2list t') ++ [a] 
+| t' @ _ => ltree2list t' 
+end.
+
 (*length over the main truck*)
 Fixpoint ltreelen {X: Type} (t: LTree X) : nat :=
 match t with
