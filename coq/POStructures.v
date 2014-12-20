@@ -2,10 +2,10 @@ Require Export Coq.Lists.List.
 Require Export Hex.
 Require Export LTree2.
 Require Export HashTable.
-Require Export FixedList.
 
 Import ListNotations.
 Local Open Scope list_scope.
+Notation "[ x , .. , y ]" := (cons x .. (cons y nil) ..).
 
 Definition is_nilb {X} (l: list X) := 
 match l with
